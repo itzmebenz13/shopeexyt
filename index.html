@@ -157,7 +157,7 @@
             <!-- Footer area -->
             <div class="bg-gray-50 px-6 md:px-8 py-4 border-t border-shopee-border text-[0.75rem] text-shopee-sub flex justify-between items-center">
                 <span>Secured with Base Shopee Affiliate ID</span>
-                <span class="text-gray-400">v1.4.0 (Backend Ready)</span>
+                <span class="text-gray-400">v1.6.0 (Root URL)</span>
             </div>
         </div>
     </main>
@@ -170,9 +170,8 @@
 
     <script>
         // --- CONFIGURATION ---
-        // REPLACE THIS WITH YOUR RAILWAY APP URL ONCE DEPLOYED!
-        // Example: "https://my-shopee-backend-production.up.railway.app/unshorten"
-        const BACKEND_API_URL = "https://your-app-name.up.railway.app/unshorten"; 
+        // Just the root URL now! No /unshorten needed.
+        const BACKEND_API_URL = "https://shopeexyt.up.railway.app"; 
         
         const BASE_LINK = "https://s.shopee.ph/an_redir?affiliate_id=13339680153&origin_link=https%3A%2F%2Fshopee.ph%2Fproduct%2F98477970%2F23972212767%3Fgads_t_sig%3DgqRjZGVrxHCFomtpsTE0MjUxOnRzc19zZGtfa2V5omt20QABpGFsZ2_SAAAAZKNkZWvAomN0xEAAAAAM_NxfHGgeczprZR4Q8tPoOfvwhbtN63JlB369xGJA1mbqBWuW2sVWxQjSJT_xT_mbG0_W5kumedB_GGTjqmNpcGhlcnRleHTEbAAAAAwD20ZGO3UUiWJ47NHWlmMT8GusU1ySrF3aXC9XPf-58OsnuDQjBHsTBv3SSIX0NNJBuXlQItwl7HMDsXxAcAefGmqwPn2VPZA3Tjg5mSaHyD7qOWx9r-0iZvYa6UMRrw0dAyWkVIA6bQ&sub_id=YT3-mnUpOFkyGpofmhWyop_jjhMi_WY2eyebK6Svl2kZYFRytZ5F_A5gEw6E6pPRCspt_WpJMeQJkdTnLKpyolzDfVfAs4q2RXtkjqgQKHtPts2_M0xXi7qXlZ7CS4XD93IxQYkl";
         
@@ -197,18 +196,27 @@
             toastTimeout = setTimeout(() => {
                 toast.classList.add('hidden');
                 toast.classList.remove('toast-enter');
-            }, 3500);
+            }, 5000);
         }
 
         // Fetch extracted URL from your Railway Backend
         async function unshortenViaBackend(shortUrl) {
             if (BACKEND_API_URL.includes('your-app-name')) {
-                throw new Error("Please replace the BACKEND_API_URL in the code with your actual Railway URL.");
+                throw new Error("Missing Setup: Please replace BACKEND_API_URL in the code with your actual Railway URL.");
             }
 
-            const response = await fetch(`${BACKEND_API_URL}?url=${encodeURIComponent(shortUrl)}`);
+            // Ensure we don't end up with double slashes if the user includes a trailing slash
+            const baseUrl = BACKEND_API_URL.endsWith('/') ? BACKEND_API_URL.slice(0, -1) : BACKEND_API_URL;
+            const response = await fetch(`${baseUrl}?url=${encodeURIComponent(shortUrl)}`);
+            
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.includes("text/html")) {
+                console.error("Server returned HTML.");
+                throw new Error("Backend Configuration Error: The server returned a web page instead of JSON.");
+            }
+
             if (!response.ok) {
-                throw new Error("Backend failed to extract the link. Is your Railway app running?");
+                throw new Error("Backend Error: Failed to extract the link. Is your Railway Node.js app running?");
             }
             
             const data = await response.json();
@@ -237,7 +245,6 @@
                 if (link.includes('s.shopee.ph') || link.includes('shp.ee')) {
                     convertBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Extracting Link...`;
                     
-                    // Call the Railway backend
                     finalLink = await unshortenViaBackend(link);
                 } else {
                     convertBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Generating...`;
