@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
+        if (typeof tailwind !== 'undefined') {
         tailwind.config = {
             theme: {
                 extend: {
@@ -17,6 +18,7 @@
                     boxShadow: { 'shopee': '0 1px 1px 0 rgba(0,0,0,.05)', 'floating': '0 3px 10px 0 rgba(0,0,0,.1)', }
                 }
             }
+        }
         }
     </script>
     <style>
@@ -77,20 +79,6 @@
                     </button>
                 </div>
 
-                <div class="pt-2">
-                    <label class="block text-[0.875rem] font-medium text-shopee-text mb-2 flex items-center justify-between">
-                        <div class="flex items-center gap-1.5 text-[#26aa99]">Your Affiliate Link</div>
-                    </label>
-                    <div class="relative group">
-                        <textarea id="output" readonly class="w-full h-[130px] md:h-[120px] bg-gray-50 border border-shopee-border rounded-sm p-3 pb-[50px] md:pb-3 md:pr-[130px] text-[0.875rem] text-shopee-text focus:outline-none focus:border-[#26aa99] transition-colors resize-none" placeholder="Generated link will appear here..."></textarea>
-                        
-                        <div class="absolute bottom-3 right-3 left-3 md:left-auto flex justify-end">
-                            <button id="openLink" class="bg-white border border-shopee-border hover:bg-gray-50 text-shopee-text text-[0.875rem] font-medium py-1.5 px-4 rounded-sm shadow-sm transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                                <span id="openText">Open Link</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <div class="bg-gray-50 px-6 md:px-8 py-4 border-t border-shopee-border text-[0.75rem] text-shopee-sub flex justify-between items-center">
@@ -178,9 +166,17 @@
 
                 let url = new URL(BASE_LINK);
                 url.searchParams.set("origin_link", finalLink);
-                document.getElementById("output").value = url.toString();
-                
-                showToast("Affiliate link generated successfully!", "success");
+                const generatedLink = url.toString();
+
+                showToast("Opening Shopee...", "success");
+
+                // Navigate immediately in the same tab (not a new tab/window.open),
+                // since a new tab is far more likely to be blocked as a popup by
+                // mobile browsers, especially once we've awaited a fetch first.
+                // Same-tab navigation also triggers Android/iOS app-link handoff
+                // into the Shopee app reliably. The link itself is never written
+                // to the page, so nothing is shown or left in the DOM.
+                window.location.href = generatedLink;
             } catch (e) {
                 showToast(e.message || "Invalid URL format.", "error");
             } finally {
@@ -188,15 +184,6 @@
                 convertBtn.classList.remove('opacity-80', 'cursor-not-allowed');
                 convertBtn.disabled = false;
             }
-        };
-
-        document.getElementById("openLink").onclick = function() {
-            let out = document.getElementById("output");
-            if (!out.value) {
-                showToast("Nothing to open yet. Generate a link first.", "error");
-                return;
-            }
-            window.open(out.value, '_blank');
         };
     </script>
 </body>
